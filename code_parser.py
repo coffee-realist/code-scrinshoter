@@ -38,19 +38,19 @@ class Code:
     class Class(CodeBlock):
         def __init__(self, name, start_line, end_line, body):
             super().__init__(name, start_line, end_line)
-            self.methods = []
+            self.functions = []
             self.classes = []
             self.get_inner_objects(body)
 
         def get_inner_objects(self, body):
             for obj in body:
                 if isinstance(obj, ast.FunctionDef):
-                    self.methods.append(Code.Function(obj.name, obj.lineno, obj.end_lineno, obj.body))
+                    self.functions.append(Code.Function(obj.name, obj.lineno, obj.end_lineno, obj.body))
                 if isinstance(obj, ast.ClassDef):
                     self.classes.append(Code.Class(obj.name, obj.lineno, obj.end_lineno, obj.body))
 
         def __str__(self):
-            methods_str = '\n'.join(str(method) for method in self.methods)
+            methods_str = '\n'.join(str(method) for method in self.functions)
             inner_classes_str = '\n'.join(str(c) for c in self.classes)
             return f'Class name: {self.name}\n\tStart: {self.start_line}\n\t' \
                    f'End: {self.end_line}\nMethods:\n{methods_str if methods_str else "-"}\n' \
@@ -71,12 +71,8 @@ class Code:
         return f'CODE CLASSES:\n-------------------------------\n{classes_str}-------------------------------\n' \
                f'CODE FUNCTIONS:\n-------------------------------\n{functions_str}\n-------------------------------\n'
 
-
-def main():
-    filename = "block_splitting.py"
-    code = Code(filename)
-    print(code)
-
-
-if __name__ == '__main__':
-    main()
+    def get_code(self, block):
+        start, end = block.start_line, block.end_line
+        with open(self.path) as file:
+            code_text = file.read().split('\n')
+        return '\n'.join(code_text[start - 1:end])
