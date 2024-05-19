@@ -1,8 +1,8 @@
 import sys
 import os
-
+import glob
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import (QApplication, QFileDialog, QMainWindow, QVBoxLayout,
+from PyQt5.QtWidgets import (QApplication, QFileDialog, QMainWindow, QVBoxLayout, QHBoxLayout,
                              QPushButton, QTreeWidget, QTreeWidgetItem, QWidget,
                              QMessageBox, QCheckBox, QLabel, QScrollArea, QInputDialog)
 
@@ -23,14 +23,18 @@ class CodeExplorer(QMainWindow):
         self.tree = QTreeWidget(self)
         self.tree.setHeaderLabels(["Code Structure"])
         self.concat_check = QCheckBox("Concatenate Screenshots", self)
+        self.button_layout = QHBoxLayout()
         self.select_button = QPushButton("Get Code Screenshots", self)
         self.select_button.clicked.connect(self.select_item)
+        self.button_layout.addWidget(self.select_button)
         self.copy_button = QPushButton("Copy Image", self)
         self.copy_button.clicked.connect(self.copy_image_to_clipboard)
         self.copy_button.setEnabled(False)
+        self.button_layout.addWidget(self.copy_button)
         self.save_button = QPushButton("Save", self)
         self.save_button.clicked.connect(self.save_image_as)
         self.save_button.setEnabled(False)
+        self.button_layout.addWidget(self.save_button)
         self.image_layout_widget = QWidget()
         self.image_layout = QVBoxLayout(self.image_layout_widget)
         self.scroll_area = QScrollArea(self)
@@ -39,9 +43,7 @@ class CodeExplorer(QMainWindow):
         self.layout.addWidget(self.open_button)
         self.layout.addWidget(self.tree)
         self.layout.addWidget(self.concat_check)
-        self.layout.addWidget(self.select_button)
-        self.layout.addWidget(self.copy_button)
-        self.layout.addWidget(self.save_button)
+        self.layout.addLayout(self.button_layout)
         self.layout.addWidget(self.scroll_area)
         self.code_structure = None
         self.current_image_paths = []
@@ -101,8 +103,20 @@ class CodeExplorer(QMainWindow):
                 self.image_layout.removeWidget(widget_to_remove)
                 widget_to_remove.setParent(None)
 
+        def delete_temp_files():
+            temp_files = (glob.glob('code_part*.png') +
+                          glob.glob('code_concat.png') +
+                          glob.glob('temp_image_*.png') +
+                          glob.glob('code_*.html'))
+            for file_path in temp_files:
+                try:
+                    os.remove(file_path)
+                except OSError as e:
+                    print(f"Error: {file_path} : {e.strerror}")
+
         selected_item = self.tree.currentItem()
         if selected_item:
+            delete_temp_files()
             code_obj = selected_item.obj
             code_text = self.code_structure.get_code(code_obj)
             concat_screenshots = self.concat_check.isChecked()
@@ -154,6 +168,20 @@ class CodeExplorer(QMainWindow):
                 pixmap = QPixmap(image_path)
                 pixmap.save(save_path)
             QMessageBox.information(self, "Save Complete", "All images have been saved successfully.")
+
+    def closeEvent(self, event):
+        def delete_temp_files():
+            temp_files = (glob.glob('code_part*.png') +
+                          glob.glob('code_concat.png') +
+                          glob.glob('temp_image_*.png') +
+                          glob.glob('code_*.html'))
+            for file_path in temp_files:
+                try:
+                    os.remove(file_path)
+                except OSError as e:
+                    print(f"Error: {file_path} : {e.strerror}")
+        delete_temp_files()
+        event.accept()
 
 
 if __name__ == "__main__":
