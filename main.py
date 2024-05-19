@@ -55,12 +55,22 @@ class CodeExplorer(QMainWindow):
     def populate_tree(self):
         self.tree.clear()
         if self.code_structure:
+            if self.code_structure.libraries_code:
+                lib_item = QTreeWidgetItem([f"Libraries (Lines {self.code_structure.libraries_code.start_line}-"
+                                            f"{self.code_structure.libraries_code.end_line})"])
+                lib_item.obj = self.code_structure.libraries_code
+                self.tree.addTopLevelItem(lib_item)
             for cls in self.code_structure.classes:
                 cls_item = self.add_class_item(cls)
                 self.tree.addTopLevelItem(cls_item)
             for func in self.code_structure.functions:
                 func_item = self.add_function_item(func)
                 self.tree.addTopLevelItem(func_item)
+            if self.code_structure.global_code:
+                global_item = QTreeWidgetItem([f"Global Code (Lines {self.code_structure.global_code.start_line}-"
+                                               f"{self.code_structure.global_code.end_line})"])
+                global_item.obj = self.code_structure.global_code
+                self.tree.addTopLevelItem(global_item)
 
     def add_class_item(self, cls):
         item = QTreeWidgetItem([f"Class: {cls.name} (Lines {cls.start_line}-{cls.end_line})"])
@@ -86,10 +96,10 @@ class CodeExplorer(QMainWindow):
 
     def select_item(self):
         def clear_image_layout():
-            while self.image_layout.count():
-                child = self.image_layout.takeAt(0)
-                if child.widget():
-                    child.widget().deleteLater()
+            for i in reversed(range(self.image_layout.count())):
+                widget_to_remove = self.image_layout.itemAt(i).widget()
+                self.image_layout.removeWidget(widget_to_remove)
+                widget_to_remove.setParent(None)
 
         selected_item = self.tree.currentItem()
         if selected_item:
