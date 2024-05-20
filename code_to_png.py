@@ -3,25 +3,26 @@ from pygments import highlight
 from pygments.formatters.html import HtmlFormatter
 from pygments.lexers import get_lexer_by_name
 from PIL import Image, ImageChops
-from code_parser import Code
 
 
 class CodeToPng:
-    def __init__(self, code_text):
-        self.font = 13
+    def __init__(self, code_text, style='default', font='Courier'):
+        self.font_size = 13
         self.max_width = 1920
         self.max_height = 1080
         self.line_height = 20
-        self.letter_width = 0.64 * self.font
+        self.letter_width = 0.64 * self.font_size
         self.code_text = code_text
+        self.style = style
+        self.font = font
 
     def save_code_as_image(self, code_text, return_image=False, file_index=0):
         size = self.calculate_image_size(self.code_text)
         lexer = get_lexer_by_name("python")
-        formatter = HtmlFormatter(style="xcode")
+        formatter = HtmlFormatter(style=self.style)
         html = highlight(code_text, lexer, formatter)
         css = formatter.get_style_defs('.highlight')
-        css = f'<style>{css[:25]}font-size: {self.font}px;{css[25:]}</style>'
+        css = f'<style>{css[:25]}font-size: {self.font_size}px;font-family:{self.font};{css[25:]}</style>'
         html_css = f'<html><head>{css}</head><body>{html}</body></html>'
         html_file = f"code_{file_index}.html"
         with open(html_file, "w") as file:
@@ -89,9 +90,3 @@ class CodeToPng:
         if concat_screenshots:
             final_image = self.concat_images(images)
             final_image.save(f"{base_file_name}_concat.png")
-
-
-code = Code("code_parser.py")
-code__text = code.get_code(code.classes[0])
-ctp = CodeToPng(code__text)
-ctp.save_code_pages('code', concat_screenshots=True)

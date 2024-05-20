@@ -1,11 +1,10 @@
-import sys
-import os
 import glob
+import os
+import sys
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import (QApplication, QFileDialog, QMainWindow, QVBoxLayout, QHBoxLayout,
                              QPushButton, QTreeWidget, QTreeWidgetItem, QWidget,
-                             QMessageBox, QCheckBox, QLabel, QScrollArea, QInputDialog)
-
+                             QMessageBox, QCheckBox, QLabel, QScrollArea, QInputDialog, QComboBox, QFontComboBox)
 from code_parser import Code
 from code_to_png import CodeToPng
 
@@ -20,6 +19,11 @@ class CodeExplorer(QMainWindow):
         self.layout = QVBoxLayout(self.central_widget)
         self.open_button = QPushButton("Open Python Code File", self)
         self.open_button.clicked.connect(self.open_file)
+        self.style_label = QLabel("Select Style:")
+        self.style_combo = QComboBox()
+        self.style_combo.addItems(["default", "xcode", "monokai", "vs", "emacs", "friendly"])
+        self.font_label = QLabel("Select Font:")
+        self.font_combo = QFontComboBox()
         self.tree = QTreeWidget(self)
         self.tree.setHeaderLabels(["Code Structure"])
         self.concat_check = QCheckBox("Concatenate Screenshots", self)
@@ -41,6 +45,10 @@ class CodeExplorer(QMainWindow):
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setWidget(self.image_layout_widget)
         self.layout.addWidget(self.open_button)
+        self.layout.addWidget(self.style_label)
+        self.layout.addWidget(self.style_combo)
+        self.layout.addWidget(self.font_label)
+        self.layout.addWidget(self.font_combo)
         self.layout.addWidget(self.tree)
         self.layout.addWidget(self.concat_check)
         self.layout.addLayout(self.button_layout)
@@ -73,6 +81,9 @@ class CodeExplorer(QMainWindow):
                                                f"{self.code_structure.global_code.end_line})"])
                 global_item.obj = self.code_structure.global_code
                 self.tree.addTopLevelItem(global_item)
+            entire_code_item = QTreeWidgetItem(["Entire Code"])
+            entire_code_item.obj = "entire_code"
+            self.tree.addTopLevelItem(entire_code_item)
 
     def add_class_item(self, cls):
         item = QTreeWidgetItem([f"Class: {cls.name} (Lines {cls.start_line}-{cls.end_line})"])
@@ -118,9 +129,14 @@ class CodeExplorer(QMainWindow):
         if selected_item:
             delete_temp_files()
             code_obj = selected_item.obj
-            code_text = self.code_structure.get_code(code_obj)
+            if code_obj == "entire_code":
+                code_text = self.code_structure.get_code_entire()
+            else:
+                code_text = self.code_structure.get_code(code_obj)
             concat_screenshots = self.concat_check.isChecked()
-            ctp = CodeToPng(code_text)
+            selected_style = self.style_combo.currentText()
+            selected_font = self.font_combo.currentFont().family()
+            ctp = CodeToPng(code_text, style=selected_style, font=selected_font)
             ctp.save_code_pages('code', concat_screenshots=concat_screenshots)
             clear_image_layout()
             self.current_image_paths = []
@@ -142,7 +158,6 @@ class CodeExplorer(QMainWindow):
     def copy_image_to_clipboard(self):
         if not self.current_image_paths:
             return
-
         if len(self.current_image_paths) == 1:
             clipboard = QApplication.clipboard()
             pixmap = QPixmap(self.current_image_paths[0])

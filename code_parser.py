@@ -70,7 +70,6 @@ class Code:
         with open(self.path) as file:
             code_text = file.read()
             node = ast.parse(code_text)
-
         global_start_line = None
         last_end_line = len(code_text.split('\n'))
         import_lines = []
@@ -84,12 +83,10 @@ class Code:
                 import_lines.append((obj.lineno, obj.end_lineno))
             else:
                 non_import_lines.append((obj.lineno, obj.end_lineno))
-
         if import_lines:
             start_line = import_lines[0][0]
             end_line = import_lines[-1][1]
             self.libraries_code = Code.Libraries(start_line, end_line)
-
         if non_import_lines:
             global_start_line = non_import_lines[0][0]
             global_end_line = non_import_lines[-1][1]
@@ -105,6 +102,10 @@ class Code:
         return f'CODE CLASSES:\n-------------------------------\n{classes_str}-------------------------------\n' \
                f'CODE FUNCTIONS:\n-------------------------------\n{functions_str}\n-------------------------------\n' \
                f'{libraries_code_str}\n{global_code_str}'
+
+    def get_code_entire(self):
+        with open(self.path) as file:
+            return file.read()
 
     def get_code(self, block):
         start, end = block.start_line, block.end_line
